@@ -9,14 +9,45 @@ class Car {
     this.acceleration = 0.2;
     this.maxSpeed = 3;
     this.maxReverseSpeed = 1.5;
-    this.friction = 0.05;
+    this.friction = 0.01;
     this.angle = 0;
-    this.amtAngleAdjustPerFrame = 0.03;
+    this.amtAngleAdjustPerFrame = 0.015;
 
+    this.sensor = new Sensor(this);
     this.controls = new Controls();
   }
 
   update() {
+    this.#move();
+    this.sensor.update();
+  }
+
+  /**
+   * Draws a rectangle representing the car on the canvas.
+   * @param {CanvasRenderingContext2D} ctx - The 2D rendering context of canvas.
+   * @returns {void}
+   */
+  draw(ctx) {
+    ctx.save();
+    ctx.translate(this.x, this.y);
+    ctx.rotate(-this.angle);
+    ctx.beginPath();
+    ctx.rect(-this.width / 2, -this.height / 2, this.width, this.height);
+    ctx.fill();
+
+    ctx.restore();
+
+    this.sensor.draw(ctx);
+  }
+
+  /**
+   * Updates the car's position and angle based on user input and physics.
+   *
+   * @private
+   * @memberof Car
+   * @returns {void}
+   */
+  #move() {
     if (this.controls.forward) this.speed += this.acceleration;
     if (this.controls.reverse) this.speed -= this.acceleration;
 
@@ -37,22 +68,6 @@ class Car {
     }
 
     this.x -= Math.sin(this.angle) * this.speed;
-    this.y -= this.speed;
-  }
-
-  /**
-   * Draws a rectangle representing the car on the canvas.
-   * @param {CanvasRenderingContext2D} ctx - The 2D rendering context of canvas.
-   * @returns {void}
-   */
-  draw(ctx) {
-    ctx.save();
-    ctx.translate(this.x, this.y);
-    ctx.rotate(-this.angle);
-    ctx.beginPath();
-    ctx.rect(-this.width / 2, -this.height / 2, this.width, this.height);
-    ctx.fill();
-
-    ctx.restore();
+    this.y -= Math.cos(this.angle) * this.speed;
   }
 }
