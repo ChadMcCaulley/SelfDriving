@@ -9,7 +9,7 @@ class Controls {
       case "USER_CONTROLLED":
         this.#addKeyboardListeners();
         break;
-      case "TRAFFIC":
+      case "DUMMY":
         this.forward = true;
         break;
     }

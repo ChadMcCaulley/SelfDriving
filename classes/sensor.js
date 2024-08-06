@@ -15,20 +15,23 @@ class Sensor {
    * Update the car and sensors
    * @param {Array} roadBorders - Road Bounds
    */
-  update(roadBorders) {
+  update(roadBorders, traffic = []) {
     this.#castRays();
     this.readings = [];
 
     for (let i = 0; i < this.rays.length; i++) {
-      this.readings.push(this.#getReading(this.rays[i], roadBorders));
+      this.readings.push(this.#getReading(this.rays[i], roadBorders, traffic));
     }
   }
 
   /**
    * Update the car and sensors
+   * @param {Array} ray - Sensor ray
    * @param {Array} roadBorders - Road Bounds
+   * @param {Array} traffic - Other Cars
+   * @returns {Number}
    */
-  #getReading(ray, roadBorders) {
+  #getReading(ray, roadBorders, traffic = []) {
     let touches = [];
     for (let i = 0; i < roadBorders.length; i++) {
       const touch = getIntersection(
@@ -39,6 +42,19 @@ class Sensor {
       );
       if (touch) touches.push(touch);
     }
+    for (const car of traffic) {
+      const poly = car.polygon;
+      for (let j = 0; j < poly.length; j++) {
+        const value = getIntersection(
+          ray[0],
+          ray[1],
+          poly[j],
+          poly[(j + 1) % poly.length]
+        );
+        if (value) touches.push(value);
+      }
+    }
+
     if (touches.length === 0) return null;
 
     let touchWithMinOffset = touches[0];

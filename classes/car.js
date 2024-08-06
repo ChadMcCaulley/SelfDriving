@@ -4,7 +4,7 @@ class Car {
     y,
     width = 30,
     height = 50,
-    isUserControlled = false,
+    controlType = "DUMMY",
     maxSpeed = 3,
   }) {
     this.x = x;
@@ -22,25 +22,43 @@ class Car {
 
     this.damaged = false;
 
-    if (isUserControlled) {
+    this.useBrain = controlType == "AI";
+
+    if (controlType !== "DUMMY") {
       this.sensor = new Sensor(this);
-      this.controls = new Controls("USER_CONTROLLED");
-    } else {
-      this.controls = new Controls("TRAFFIC");
+      this.brain = new NeuralNetwork([this.sensor.rayCount, 6, 4]);
     }
+
+    this.controls = new Controls(controlType);
   }
 
   /**
    * Update the car and sensors
    * @param {Array} roadBorders - Road Bounds
+   * @param {Array} traffic - Other cars
    */
-  update(roadBorders) {
+  update(roadBorders, traffic) {
     if (!this.damaged) {
       this.#move();
       this.polygon = this.#createPolygon();
-      this.damaged = this.#assessDamage(roadBorders);
+      this.damaged = this.#assessDamage(roadBorders, traffic);
     }
-    if (this.sensor) this.sensor.update(roadBorders);
+    if (this.sensor) {
+      this.sensor.update(roadBorders, traffic);
+
+      if (this.useBrain) {
+        const offsets = this.sensor.readings.map((reading) => {
+          // Stronger reading the closer the object
+          return reading == null ? 0 : 1 - reading.offset;
+        });
+        const outputs = NeuralNetwork.feedForward(offsets, this.brain);
+
+        this.controls.forward = outputs[0];
+        this.controls.left = outputs[1];
+        this.controls.right = outputs[2];
+        this.controls.reverse = outputs[3];
+      }
+    }
   }
 
   /**
@@ -48,19 +66,9 @@ class Car {
    * @param {CanvasRenderingContext2D} ctx - The 2D rendering context of canvas.
    * @returns {void}
    */
-  draw(ctx) {
-    /** Works by we lose the borders of the car as we rotate the drawing
-     ctx.save();
-     ctx.translate(this.x, this.y);
-     ctx.rotate(-this.angle);
-     ctx.beginPath();
-     ctx.rect(-this.width / 2, -this.height / 2, this.width, this.height);
-     ctx.fill();
-     ctx.restore();
-    */
-
+  draw(ctx, color = "black", drawSensor = false) {
     if (this.damaged) ctx.fillStyle = "gray";
-    else ctx.fillStyle = "black";
+    else ctx.fillStyle = color;
     ctx.beginPath();
     ctx.moveTo(this.polygon[0].x, this.polygon[0].y);
     for (let i = 1; i < this.polygon.length; i++) {
@@ -68,12 +76,15 @@ class Car {
     }
     ctx.fill();
 
-    if (this.sensor) this.sensor.draw(ctx);
+    if (this.sensor && drawSensor) this.sensor.draw(ctx);
   }
 
-  #assessDamage(roadBorders) {
+  #assessDamage(roadBorders = [], traffic = []) {
     for (let i = 0; i < roadBorders.length; i++) {
       if (polysIntersect(this.polygon, roadBorders[i])) return true;
+    }
+    for (let i = 0; i < traffic.length; i++) {
+      if (polysIntersect(this.polygon, traffic[i].polygon)) return true;
     }
     return false;
   }
