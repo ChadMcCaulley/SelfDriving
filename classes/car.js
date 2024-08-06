@@ -1,5 +1,12 @@
 class Car {
-  constructor(x, y, width, height) {
+  constructor({
+    x,
+    y,
+    width = 30,
+    height = 50,
+    isUserControlled = false,
+    maxSpeed = 3,
+  }) {
     this.x = x;
     this.y = y;
     this.width = width;
@@ -7,7 +14,7 @@ class Car {
 
     this.speed = 0;
     this.acceleration = 0.2;
-    this.maxSpeed = 3;
+    this.maxSpeed = maxSpeed;
     this.maxReverseSpeed = 1.5;
     this.friction = 0.01;
     this.angle = 0;
@@ -15,8 +22,12 @@ class Car {
 
     this.damaged = false;
 
-    this.sensor = new Sensor(this);
-    this.controls = new Controls();
+    if (isUserControlled) {
+      this.sensor = new Sensor(this);
+      this.controls = new Controls("USER_CONTROLLED");
+    } else {
+      this.controls = new Controls("TRAFFIC");
+    }
   }
 
   /**
@@ -29,7 +40,7 @@ class Car {
       this.polygon = this.#createPolygon();
       this.damaged = this.#assessDamage(roadBorders);
     }
-    this.sensor.update(roadBorders);
+    if (this.sensor) this.sensor.update(roadBorders);
   }
 
   /**
@@ -57,7 +68,7 @@ class Car {
     }
     ctx.fill();
 
-    this.sensor.draw(ctx);
+    if (this.sensor) this.sensor.draw(ctx);
   }
 
   #assessDamage(roadBorders) {
