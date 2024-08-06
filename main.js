@@ -8,22 +8,18 @@ const carCtx = carCanvas.getContext("2d");
 const networkCtx = networkCanvas.getContext("2d");
 
 const road = new Road(carCanvas.width / 2, carCanvas.width, 3);
-const numberOfCarsPerGeneration = 100;
+const numberOfCarsPerGeneration = 1000;
 const cars = generateCars(numberOfCarsPerGeneration);
 let bestCar = cars[0];
 if (localStorage.getItem("bestBrain")) {
   for (let i = 0; i < cars.length; i++) {
     cars[i].brain = JSON.parse(localStorage.getItem("bestBrain"));
-    if (i != 0) NeuralNetwork.mutate(cars[i].brain, 0.25);
+    if (i != 0) NeuralNetwork.mutate(cars[i].brain, 0.2);
   }
 }
 
-console.log("getLaneCenter(0): ", road.getLaneCenter(0));
-console.log("getLaneCenter(1): ", road.getLaneCenter(1));
-console.log("getLaneCenter(2): ", road.getLaneCenter(2));
-
 const traffic = [
-  new Car({ x: road.getLaneCenter(0), y: -800, maxSpeed: 2 }),
+  new Car({ x: road.getLaneCenter(0), y: -900, maxSpeed: 2 }),
   new Car({ x: road.getLaneCenter(1), y: -300, maxSpeed: 2 }),
   new Car({ x: road.getLaneCenter(2), y: -350, maxSpeed: 2 }),
   new Car({ x: road.getLaneCenter(1), y: -150, maxSpeed: 2 }),
